@@ -81,7 +81,7 @@ class AlgoStrategy(gamelib.AlgoCore):
         self.build_reactive_defense(game_state)
 
         # If the turn is less than 5, stall with Scramblers and wait to see enemy's base
-        if game_state.turn_number < 5:
+        if game_state.turn_number < 5 or game_state.turn_number % 2 == 0:
             self.stall_with_scramblers(game_state)
         else:
             # Now let's analyze the enemy base to see where their defenses are concentrated.
@@ -112,12 +112,12 @@ class AlgoStrategy(gamelib.AlgoCore):
         # More community tools available at: https://terminal.c1games.com/rules#Download
 
         # Place destructors that attack enemy units
-        destructor_locations = [[0, 13], [27, 13], [8, 11], [19, 11], [13, 11], [14, 11]]
+        destructor_locations = [[0, 13], [1, 12], [4, 12], [8, 12], [12, 12], [15, 12], [19, 12], [23, 12], [26, 12], [27, 13]]
         # attempt_spawn will try to spawn units if we have resources, and will check if a blocking unit is already there
         game_state.attempt_spawn(DESTRUCTOR, destructor_locations)
         
         # Place filters in front of destructors to soak up damage for them
-        filter_locations = [[8, 12], [19, 12]]
+        filter_locations = [[1, 13], [4, 13], [15, 13], [23, 13], [26, 13], [8, 13], [12, 13]]
         game_state.attempt_spawn(FILTER, filter_locations)
 
     def build_reactive_defense(self, game_state):
@@ -128,12 +128,19 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         for location in self.scored_on_locations:
             # Build destructor one space above so that it doesn't block our own edge spawn locations
-            build_location = [location[0], location[1]+1]
-            game_state.attempt_spawn(DESTRUCTOR, build_location)
+            if location[0] + location[1] == 13:  # left side
+                for i in range(location[0]):
+                    game_state.attempt_spawn(DESTRUCTOR, [i, 13 - i])
+            if location[0] - location[1] == 14:  # right side
+                for i in range(13 - location[0]):
+                    game_state.attempt_spawn(DESTRUCTOR, [27 - i, 13 - i])
 
     def stall_with_scramblers(self, game_state):
         """
         Send out Scramblers at random locations to defend our base from enemy moving units.
+        """
+        game_state.attempt_spawn(SCRAMBLER, [5, 8])
+        game_state.attempt_spawn(SCRAMBLER, [22, 8])
         """
         # We can spawn moving units on our edges so a list of all our edge locations
         friendly_edges = game_state.game_map.get_edge_locations(game_state.game_map.BOTTOM_LEFT) + game_state.game_map.get_edge_locations(game_state.game_map.BOTTOM_RIGHT)
@@ -149,10 +156,11 @@ class AlgoStrategy(gamelib.AlgoCore):
             deploy_location = deploy_locations[deploy_index]
             
             game_state.attempt_spawn(SCRAMBLER, deploy_location)
-            """
-            We don't have to remove the location since multiple information 
-            units can occupy the same space.
-            """
+
+            # We don't have to remove the location since multiple information 
+            # units can occupy the same space.
+
+        """
 
     def emp_line_strategy(self, game_state):
         """
@@ -170,11 +178,11 @@ class AlgoStrategy(gamelib.AlgoCore):
         # Now let's build out a line of stationary units. This will prevent our EMPs from running into the enemy base.
         # Instead they will stay at the perfect distance to attack the front two rows of the enemy base.
         for x in range(27, 5, -1):
-            game_state.attempt_spawn(cheapest_unit, [x, 11])
+            game_state.attempt_spawn(cheapest_unit, [x, 12])
 
         # Now spawn EMPs next to the line
         # By asking attempt_spawn to spawn 1000 units, it will essentially spawn as many as we have resources for
-        game_state.attempt_spawn(EMP, [24, 10], 1000)
+        game_state.attempt_spawn(EMP, [25, 11], 1000)
 
     def least_damage_spawn_location(self, game_state, location_options):
         """
