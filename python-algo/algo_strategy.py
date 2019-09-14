@@ -81,7 +81,11 @@ class AlgoStrategy(gamelib.AlgoCore):
         self.build_reactive_defense(game_state)
 
         # If the turn is less than 5, stall with Scramblers and wait to see enemy's base
-        if game_state.turn_number < 5 or game_state.turn_number % 2 == 0:
+        if game_state.get_resource(resource_type = game_state.BITS, player_index = 1) >= 10:
+            for i in range(5):
+                game_state.attempt_spawn(SCRAMBLER, [5, 8])
+                game_state.attempt_spawn(SCRAMBLER, [22, 8])
+        elif game_state.turn_number < 5 or game_state.turn_number % 2 == 0:
             self.stall_with_scramblers(game_state)
         else:
             # Now let's analyze the enemy base to see where their defenses are concentrated.
